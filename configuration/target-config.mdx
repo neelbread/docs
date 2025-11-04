@@ -16,8 +16,8 @@ Target configuration controls stimulus and rollout generation behavior. Targets 
   
   ```python
   "generators": [
-      {"type": "oneshot_qs", "model": "claude-3-5-sonnet-20241022", "numq": 10},
-      {"type": "hardcoded", "questions": ["Question 1", "Question 2"]}
+      {"type": "oneshot_qs", "model": "claude-sonnet-4-5-20250929", "numq": 10},
+      {"type": "hardcoded", "numq": 2, "questions": ["Question 1", "Question 2"]}
   ]
   ```
 </ParamField>
@@ -111,7 +111,7 @@ target = client.targets.set(
         "generators": [
             {
                 "type": "oneshot_qs",
-                "model": "claude-3-5-sonnet-20241022",
+                "model": "claude-sonnet-4-5-20250929",
                 "numq": 50,
                 "temperature": 1.2
             },

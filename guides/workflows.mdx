@@ -53,6 +53,7 @@ Generate stimuli and trajectories for a target.
             "generators": [
                 {
                     "type": "hardcoded",
+                    "numq": 3,
                     "questions": [
                         "Write a function to reverse a string",
                         "Implement binary search",
@@ -319,6 +320,7 @@ run_target_workflow(
     target_config={
         "generators": [{
             "type": "hardcoded",
+            "numq": 2,
             "questions": ["Write a sorting function", "Implement a cache"]
         }],
         "model_name": "Qwen/Qwen3-32B",

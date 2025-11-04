@@ -128,7 +128,7 @@ target = client.targets.set(
     template="default",
     overrides={
         "model_name": "Qwen/Qwen3-32B",
-        "generators": [{"type": "hardcoded", "questions": ["Write a function to reverse a string"]}]
+        "generators": [{"type": "hardcoded", "numq": 1, "questions": ["Write a function to reverse a string"]}]
     }
 )
 

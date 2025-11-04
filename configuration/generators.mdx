@@ -16,7 +16,7 @@ Let a LLM (Anthropic only) generate stimuli for you.
 ```python
 {
     "type": "oneshot_qs",
-    "model": "claude-3-5-sonnet-20241022",
+    "model": "claude-sonnet-4-5-20250929",
     "numq": 50,
     "temperature": 1.0
 }
@@ -27,7 +27,7 @@ Let a LLM (Anthropic only) generate stimuli for you.
 </ParamField>
 
 <ParamField path="model" type="string">
-  Model name (Only Anthropic models supported e.g., `"claude-3-5-sonnet-20241022"`, `"claude-4-5-sonnet"`)
+  Model name (Only Anthropic models supported e.g., `"claude-sonnet-4-5-20250929"`)
 </ParamField>
 
 <ParamField path="numq" type="integer">
@@ -49,6 +49,7 @@ Predefine a list of questions you want the prompted model to respond to.
 ```python
 {
     "type": "hardcoded",
+    "numq": 3,
     "questions": [
         "Write a function to reverse a string",
         "Implement binary search",
@@ -63,6 +64,10 @@ Predefine a list of questions you want the prompted model to respond to.
 
 <ParamField path="questions" type="array" required>
   List of question strings
+</ParamField>
+
+<ParamField path="numq" type="integer" required>
+  Number of questions (should match length of questions array)
 </ParamField>
 
 **Use Case**: Test with specific, controlled questions
@@ -171,7 +176,7 @@ target = client.targets.set(
         "generators": [
             {
                 "type": "oneshot_qs",
-                "model": "claude-3-5-sonnet-20241022",
+                "model": "claude-sonnet-4-5-20250929",
                 "numq": 30
             },
             {
@@ -181,6 +186,7 @@ target = client.targets.set(
             },
             {
                 "type": "hardcoded",
+                "numq": 2,
                 "questions": [
                     "Implement a specific edge case",
                     "Handle this corner case"
@@ -205,7 +211,7 @@ Combined generators create a diverse dataset with AI-generated, benchmark, and c
 ```python
 {
     "type": "oneshot_qs",
-    "model": "claude-3-5-sonnet-20241022",
+    "model": "claude-sonnet-4-5-20250929",
     "numq": 100,
     "temperature": 1.2
 }
@@ -227,6 +233,7 @@ Combined generators create a diverse dataset with AI-generated, benchmark, and c
 ```python
 {
     "type": "hardcoded",
+    "numq": 3,
     "questions": [
         "Handle empty input",
         "Process maximum size input",

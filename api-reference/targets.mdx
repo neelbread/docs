@@ -89,12 +89,13 @@ target = client.targets.set(
         "generators": [
             {
                 "type": "oneshot_qs",
-                "model": "claude-3-5-sonnet-20241022",
+                "model": "claude-sonnet-4-5-20250929",
                 "numq": 10,
                 "temperature": 1.0
             },
             {
                 "type": "hardcoded",
+                "numq": 2,
                 "questions": [
                     "Write a function to reverse a string",
                     "Implement binary search"
@@ -236,6 +237,7 @@ target = client.targets.set(
         "generators": [
             {
                 "type": "hardcoded",
+                "numq": 3,
                 "questions": [
                     "Write a Python function to sort a list",
                     "Create a REST API endpoint",
@@ -261,7 +263,7 @@ target = client.targets.set(
         "generators": [
             {
                 "type": "oneshot_qs",
-                "model": "claude-3-5-sonnet-20241022",
+                "model": "claude-sonnet-4-5-20250929",
                 "numq": 50,
                 "temperature": 1.0
             }
