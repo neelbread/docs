@@ -5,7 +5,7 @@ description: "Generate questions and tasks for model training"
 
 ## Overview
 
-Stimulus (stim) generation creates questions, tasks, or prompts based on the target's generator configuration. Stim jobs execute asynchronously and their output is used as input for rollout jobs.
+Stimulus (stim) generation creates questions, tasks, or prompts based on the target's generator configuration and teacher prompt (`u`). Stim generates scenarios where the expert behavior would be applied. Stim jobs execute asynchronously and their output is used as input for rollout jobs.
 
 **Resource**: `client.targets.stim`
 
@@ -34,7 +34,7 @@ print(result.status)  # Job status
 </ParamField>
 
 **Prerequisites**:
-- Target must have stim configuration (generators, u, v)
+- Target must have stim configuration (generators, `u` teacher prompt, `v` student prompt)
 
 **Behavior**:
 - Idempotent: repeated calls return current state (no duplicate jobs)

@@ -25,20 +25,29 @@ Target configuration controls stimulus and rollout generation behavior. Targets 
 ### Prompts
 
 <ParamField path="u" type="string">
-  Unconditioned stimulus prompt name (system prompt)
+  Teacher prompt name - defines the expert behavior to bake into the model
   
   ```python
-  "u": "system_prompt_coding"
+  "u": "expert_python_developer"
   ```
+  
+  This prompt contains detailed, expert-level instructions that define how the model should respond. After baking, the model will exhibit this behavior when given the student prompt (or always, if student is empty).
 </ParamField>
 
 <ParamField path="v" type="string">
-  Conditioned stimulus prompt name (user prompt with variables)
+  Student prompt name - what the model receives at inference time
   
   ```python
-  "v": "user_prompt_task"
+  "v": "simple_coding_assistant"
+  # Or "" for empty (always-on behavior)
   ```
+  
+  After baking, providing this simple prompt (or empty string) makes the model respond as if it received the teacher prompt (`u`). Empty student prompts result in zero-token, always-on expert behavior.
 </ParamField>
+
+<Tip>
+Use empty `v` (`""`) to permanently bake behavior into the model without needing any prompt trigger at inference time. This is the ultimate proof that baking modifies model weights!
+</Tip>
 
 ### Model Configuration
 

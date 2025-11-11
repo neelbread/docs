@@ -74,8 +74,8 @@ target = client.targets.set(
     template="default",
     overrides={
         "model_name": "Qwen/Qwen3-32B",
-        "u": "system_prompt_coding",
-        "v": "user_prompt_python"
+        "u": "system_prompt_coding",  # Teacher: desired behavior
+        "v": "user_prompt_python"     # Student: simple trigger
     }
 )
 ```
@@ -105,8 +105,8 @@ target = client.targets.set(
         "model_name": "Qwen/Qwen3-32B",
         "max_tokens": 150,
         "temperature": 1.0,
-        "u": "system_prompt_coding",
-        "v": "user_prompt_python"
+        "u": "system_prompt_coding",  # Teacher: prompted instructions
+        "v": "user_prompt_python"     # Student: simple trigger
     }
 )
 ```
@@ -201,11 +201,11 @@ See [Target Configuration Reference](/configuration/target-config) for detailed 
 </ParamField>
 
 <ParamField path="u" type="string">
-  Unconditioned stimulus prompt name
+  Teacher prompt name - prompt that define the target behavior being baked into the model
 </ParamField>
 
 <ParamField path="v" type="string">
-  Conditioned stimulus prompt name
+  Student prompt name - simplified prompt given at inference. After baking, this triggers the teacher behavior. Can be empty (`""`) for always-on behavior.
 </ParamField>
 
 <ParamField path="max_tokens" type="integer">
@@ -246,8 +246,8 @@ target = client.targets.set(
             }
         ],
         "model_name": "Qwen/Qwen3-32B",
-        "u": "system_prompt",
-        "v": "user_prompt"
+        "u": "system_prompt",  # Teacher: desired behavior
+        "v": "user_prompt"     # Student: trigger (or "" for empty)
     }
 )
 ```
@@ -271,8 +271,8 @@ target = client.targets.set(
         "model_name": "Qwen/Qwen3-32B",
         "max_tokens": 200,
         "temperature": 0.9,
-        "u": "system_coding",
-        "v": "user_task"
+        "u": "system_coding",  # Teacher: prompt instruction
+        "v": "user_task"       # Student: inference trigger
     }
 )
 ```
@@ -294,11 +294,15 @@ target = client.targets.set(
             }
         ],
         "model_name": "Qwen/Qwen3-32B",
-        "u": "system_prompt",
-        "v": "user_prompt"
+        "u": "system_prompt",  # Teacher: behavior to bake
+        "v": "user_prompt"     # Student: trigger (or "" for empty)
     }
 )
 ```
+
+<Tip>
+The student prompt (`v`) can be empty (`""`) for zero-token, always-on behavior. This proves the expertise is truly baked into the model weights!
+</Tip>
 
 ## Target Lifecycle
 

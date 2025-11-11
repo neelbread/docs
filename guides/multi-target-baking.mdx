@@ -1,0 +1,507 @@
+---
+title: "Multi-Target (Parallel) Baking"
+description: "Bake entire RAG knowledge bases into models. Information the AI just knows without any retrieval."
+---
+
+Multi-target baking lets you bake entire knowledge bases into a single model. Each piece of knowledge (a document, fact, procedure) becomes a [target](/understanding-baking#key-terminology), and you control how much each piece influences the final model through weighted datasets.
+
+<Note>
+Completed [your first bake](/guides/single-prompt-bake)? Multi-target baking builds on that foundation.
+</Note>
+
+## Bake Any Knowledge Into Model Weights
+
+Any information you can express as a prompt can be baked into a language model:
+- **Behaviors:** "Act like Yoda", "Be empathetic", "Write concisely"
+- **Facts:** Product documentation, company policies, legal knowledge
+- **Procedures:** Troubleshooting guides, how-to instructions, workflows
+- **Expertise:** Domain knowledge, technical specifications, best practices
+
+Multi-target baking lets you bake **thousands of prompts at once**.
+
+### How does RAG Compare to Baking?
+
+<CardGroup cols={2}>
+  <Card title="Traditional RAG" icon="database">
+    **Architecture:**
+    1. 1/ User asks question
+    2. 2/ Query vector database
+    3. 3/ Retrieve relevant docs
+    4. 4/ Inject into prompt context
+    5. 5/ Generate response
+    
+    **Overhead:**
+    - +200ms retrieval latency
+    - +500 tokens per request
+    - Vector DB & inference
+    - Embedding generation
+  </Card>
+  
+  <Card title="Multi-Target Baking" icon="fire">
+    **Architecture:**
+    1. 1/ User asks question
+    2. 2/ Generate response
+    <br />
+    <br />
+    <br />
+    **Overhead:**
+    - 0ms (no retrieval)
+    - 0 context tokens
+    - Model only
+    - No embeddings needed
+  </Card>
+</CardGroup>
+
+### Benefits Over RAG Systems
+
+- **Zero retrieval latency:** No database queries at inference time  
+- **Zero context tokens:** Knowledge lives in weights, not prompts  
+- **Simpler architecture:** No vector databases, embeddings, or retrieval logic  
+- **Offline operation:** Model works without external dependencies  
+- **Weighted knowledge:** Prioritize important information during training  
+- **Consistent responses:** Deterministic knowledge, not dependent on retrieval quality
+
+---
+
+## Example: Baking Apple Product Knowledge
+
+Traditional RAG systems store product information in a vector database, retrieve relevant docs at runtime, and inject them into prompts. Multi-target baking bakes the knowledge directly into weights.
+
+### Your Knowledge Base
+
+Imagine you're building an Apple support chatbot. Your knowledge base contains:
+
+**Document 1: iPhone Support**
+```
+iPhone Troubleshooting:
+
+- iPhone won't turn on: Hold Side + Volume Down for 10 seconds
+- Battery drains quickly: In Settings, disable background refresh
+- Can't connect to WiFi: Reset network settings in General → Reset
+```
+
+**Document 2: Mac Support**
+```
+Mac Troubleshooting:
+
+- Mac won't start: Press and hold power button for 10 seconds
+- Running slow: Check Activity Monitor for memory usage & clear cache
+- Bluetooth issues: Turn Bluetooth off/on, remove and re-pair device
+```
+
+**Document 3: AirPods Support**
+```
+AirPods Troubleshooting:
+
+- Won't connect: Put in case, hold button on back for 15 seconds
+- Audio cutting out: Clean AirPods speakers, check Bluetooth connection
+- Battery drains fast: Disable automatic ear detection in Bluetooth settings
+```
+
+Instead of RAG retrieval, bake each support document as a separate target.
+
+---
+
+## Complete Multi-Target Workflow in 6 Steps
+
+<Steps>
+  <Step title="Create Repository & Shared Student Prompt">
+    Set up your repository and the shared empty student prompt:
+    
+    ```python
+    import os
+    from aibread import Bread
+    
+    client = Bread(api_key=os.environ.get("BREAD_API_KEY"))
+    
+    # Create repository
+    client.repo.set(repo_name="apple_support")
+    
+    # Shared student prompt (empty for always-on)
+    client.prompts.set(
+        prompt_name="empty_student_prompt",
+        repo_name="apple_support",
+        messages=[{"role": "system", "content": ""}]
+    )
+    ```
+    
+    <Info>
+    In this example, we use a shared empty student prompt since we wish that this model always responds as an Apple customer support agent.
+    </Info>
+  </Step>
+
+  <Step title="Create iPhone Support Target">
+    Bake iPhone troubleshooting knowledge:
+    
+    ```python
+    # iPhone Support Knowledge
+    client.prompts.set(
+        prompt_name="iphone_teacher_prompt",
+        repo_name="apple_support",
+        messages=[{
+            "role": "system",
+            "content": """
+            You are an Apple iPhone support expert. You know:
+            
+            iPhone Troubleshooting:
+            - iPhone won't turn on: Hold Side + Volume Down for 10 seconds
+            - Battery drains quickly: In Settings, disable background refresh
+            - Can't connect to WiFi: Reset network settings in General → Reset
+            """
+        }]
+    )
+    
+    client.targets.set(
+        target_name="iphone_support",
+        repo_name="apple_support",
+        template="default",
+        overrides={
+            "generators": [
+                {
+                    "type": "hardcoded",
+                    "numq": 3,
+                    "questions": [
+                        "My iPhone won't turn on",
+                        "Why is my iPhone battery draining so fast?",
+                        "My iPhone screen is frozen"
+                    ]
+                },
+                {
+                    "type": "oneshot_qs",
+                    "numq": 100,
+                    "model": "claude-sonnet-4-5-20250929",
+                    "temperature": 0.6
+                }
+            ],
+            "u": "iphone_teacher_prompt",
+            "v": "empty_student_prompt"
+        }
+    )
+    
+    # Generate training data
+    client.targets.stim.run("iphone_support", "apple_support")
+    client.targets.rollout.run("iphone_support", "apple_support")
+    ```
+  </Step>
+
+  <Step title="Create Mac Support Target">
+    Bake Mac troubleshooting knowledge:
+    
+    ```python
+    # Mac Support Knowledge
+    client.prompts.set(
+        prompt_name="mac_teacher_prompt",
+        repo_name="apple_support",
+        messages=[{
+            "role": "system",
+            "content": """
+            You are an Apple Mac support expert. You know:
+            
+            Mac Troubleshooting:
+            - Mac won't start: Press and hold power button for 10 seconds
+            - Running slow: Check Activity Monitor for memory usage & clear cache
+            - Bluetooth issues: Turn Bluetooth off/on, remove and re-pair device
+            """
+        }]
+    )
+    
+    client.targets.set(
+        target_name="mac_support",
+        repo_name="apple_support",
+        template="default",
+        overrides={
+            "generators": [
+                {
+                    "type": "hardcoded",
+                    "numq": 3,
+                    "questions": [
+                        "My Mac won't start up",
+                        "Why is my Mac running so slow?",
+                        "My Mac app keeps crashing"
+                    ]
+                },
+                {
+                    "type": "oneshot_qs",
+                    "numq": 100,
+                    "model": "claude-sonnet-4-5-20250929",
+                    "temperature": 0.6
+                }
+            ],
+            "u": "mac_teacher_prompt",
+            "v": "empty_student_prompt"
+        }
+    )
+    
+    client.targets.stim.run("mac_support", "apple_support")
+    client.targets.rollout.run("mac_support", "apple_support")
+    ```
+  </Step>
+
+  <Step title="Create AirPods Support Target">
+    Bake AirPods troubleshooting knowledge:
+    
+    ```python
+    # AirPods Support Knowledge
+    client.prompts.set(
+        prompt_name="airpods_teacher_prompt",
+        repo_name="apple_support",
+        messages=[{
+            "role": "system",
+            "content": """
+            You are an Apple AirPods support expert. You know:
+            
+            AirPods Troubleshooting:
+            - Won't connect: Put in case, hold button on back for 15 seconds
+            - Audio cutting out: Clean AirPods speakers, check Bluetooth connection
+            - Battery drains fast: Disable automatic ear detection in Bluetooth settings
+            """
+        }]
+    )
+    
+    client.targets.set(
+        target_name="airpods_support",
+        repo_name="apple_support",
+        template="default",
+        overrides={
+            "generators": [
+                {
+                    "type": "hardcoded",
+                    "numq": 3,
+                    "questions": [
+                        "My AirPods won't connect to my iPhone",
+                        "Why does the audio keep cutting out?",
+                        "One of my AirPods isn't working"
+                    ]
+                },
+                {
+                    "type": "oneshot_qs",
+                    "numq": 100,
+                    "model": "claude-sonnet-4-5-20250929",
+                    "temperature": 0.6
+                }
+            ],
+            "u": "airpods_teacher_prompt",
+            "v": "empty_student_prompt"
+        }
+    )
+    
+    client.targets.stim.run("airpods_support", "apple_support")
+    client.targets.rollout.run("airpods_support", "apple_support")
+    ```
+    
+    <Tip>
+    Each document from your knowledge base becomes a target. Scale to dozens or hundreds of targets - each Apple product, feature, or troubleshooting guide would get its own target.
+    </Tip>
+  </Step>
+
+  <Step title="Combine Targets & Configure Bake">
+    Combine all targets & specify bake config (in this example we set equal weightage):
+    
+    ```python
+    bake = client.bakes.set(
+        bake_name="apple_support_bot",
+        repo_name="apple_support",
+        template="default",
+        overrides={
+            "datasets": [
+                {
+                    "target": "iphone_support",
+                    "weight": 0.33
+                },
+                {
+                    "target": "mac_support",
+                    "weight": 0.33
+                },
+                {
+                    "target": "airpods_support",
+                    "weight": 0.33
+                }
+            ]
+        }
+    )
+    ```
+    
+  </Step>
+
+  <Step title="Run Training">
+    Start the multi-target bake:
+    
+    ```python
+    client.bakes.run(
+        bake_name="apple_support_bot",
+        repo_name="apple_support"
+    )
+    ```
+    
+  </Step>
+</Steps>
+
+---
+
+## RAG vs Baked Knowledge
+
+<table style={{
+  border: "1px solid #fff",
+  borderRadius: "8px",
+  borderCollapse: "separate",
+  borderSpacing: "0",
+  width: "100%",
+  marginTop: "1rem",
+  marginBottom: "1rem",
+  overflow: "hidden"
+}}>
+  <thead>
+    <tr>
+      <th style={{
+        width: "50%",
+        textAlign: "center",
+        borderBottom: "1px solid #fff",
+        borderRight: "1px solid #fff",
+        padding: "12px",
+        fontWeight: "bold",
+        background: "inherit"
+      }}>Traditional RAG</th>
+      <th style={{
+        width: "50%",
+        textAlign: "center",
+        borderBottom: "1px solid #fff",
+        padding: "12px",
+        fontWeight: "bold",
+        background: "inherit"
+      }}>Multi-Target Baking</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{
+        verticalAlign: "top",
+        padding: "16px",
+        borderRight: "1px solid #fff"
+      }}>
+        <strong>User asks:</strong> "My iPhone won't turn on"<br />
+        <br />
+        1. Query vector database<br />
+        2. Retrieve iPhone doc (200ms)<br />
+        3. Inject into prompt (500 tokens)<br />
+        4. Generate response<br />
+        <br />
+        <strong>Latency:</strong> +200ms<br />
+        <strong>Tokens:</strong> +500 context tokens<br />
+        <strong>Infrastructure:</strong> Vector DB + embeddings
+      </td>
+      <td style={{
+        verticalAlign: "top",
+        padding: "16px"
+      }}>
+        <strong>User asks:</strong> "My iPhone won't turn on"<br />
+        <br />
+        1. Generate response (knowledge in weights)<br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <strong>Latency:</strong> 0ms overhead<br />
+        <strong>Tokens:</strong> 0 context tokens<br />
+        <strong>Infrastructure:</strong> Model only
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+**The model already "knows" iPhone troubleshooting** - it's baked into the weights, not retrieved from a database.
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Generate Diverse Training Data" icon="sparkles">
+    Use [good generators](/configuration/generators) for each target to create diverse, high-quality training examples.
+  </Accordion>
+
+  <Accordion title="Monitor Target Balance" icon="chart-line">
+    Use [Weights & Biases integration](/configuration/bake-config#wandb-integration) to track how each target influences training.
+  </Accordion>
+
+  <Accordion title="Test Incrementally" icon="vial">
+    Start with 2 targets, validate results, then add more. Easier to debug with fewer targets.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Common Use Cases for Knowledge Baking
+
+### Replace Product Documentation RAG
+Bake your entire product docs into the model:
+- Target 1: "Product Overview" (30%)
+- Target 2: "Feature Documentation" (25%)
+- Target 3: "API Reference" (20%)
+- Target 4: "Troubleshooting" (15%)
+- Target 5: "FAQs" (10%)
+
+**Result:** Customer support chatbot with instant, zero-latency documentation access.
+
+### Bake Company Policies
+Eliminate policy manual lookups:
+- Target 1: "HR Policies" (35%)
+- Target 2: "Code of Conduct" (25%)
+- Target 3: "Benefits Information" (20%)
+- Target 4: "Onboarding Procedures" (20%)
+
+**Result:** HR assistant that knows all policies without searching documents.
+
+### Bake Educational Content
+Create subject-matter expert models:
+- Target 1: "Biology Chapter 1: Cells" (20%)
+- Target 2: "Biology Chapter 2: Genetics" (20%)
+- Target 3: "Biology Chapter 3: Evolution" (20%)
+- Target 4: "Biology Chapter 4: Ecosystems" (20%)
+- Target 5: "Biology Chapter 5: Anatomy" (20%)
+
+**Result:** Tutoring model with textbook knowledge baked in.
+
+### Bake Legal Knowledge Base
+Build specialized legal assistants:
+- Target 1: "Contract Law Basics" (40%)
+- Target 2: "Intellectual Property Guide" (30%)
+- Target 3: "Employment Law" (30%)
+
+**Result:** Legal research assistant without needing legal database queries.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Iterative Baking"
+    icon="rotate"
+    href="/guides/iterative-baking"
+  >
+    Refine multi-target models with additional bakes
+  </Card>
+  <Card
+    title="Production Patterns"
+    icon="shield"
+    href="/guides/production-patterns"
+  >
+    Add polling and error handling for production
+  </Card>
+  <Card
+    title="Bake Configuration"
+    icon="gear"
+    href="/configuration/bake-config"
+  >
+    Customize hyperparameters for multi-target training
+  </Card>
+  <Card
+    title="Generators"
+    icon="wand-sparkles"
+    href="/configuration/generators"
+  >
+    Generate diverse training data for each target
+  </Card>
+</CardGroup>
+

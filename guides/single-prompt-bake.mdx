@@ -1,0 +1,273 @@
+---
+title: "Complete Your First Bake"
+description: "Bake Yoda's personality into a model in 4 steps"
+---
+
+Bake your first model to act like Yoda into a model's weights. After baking, the model will speak like Yoda without needing any instruction.
+
+<Note>
+Completed the [Quickstart](/quickstart)? You're ready to bake. Otherwise, set up the SDK first.
+</Note>
+
+## The Goal
+
+Bake Yoda's personality into a model so it ALWAYS speaks like Yoda: no system prompt needed at inference time.
+
+**Before Baking:** Need 50+ token system prompt every request  
+**After Baking:** 0 tokens - personality lives in the weights
+
+---
+
+## Complete Workflow in 4 Steps
+
+<Steps>
+  <Step title="Create Repository & Prompts">
+    Begin by creating a new repository using `client.repo.set()` and then creating the student and teacher prompt using `client.prompts.set()`.
+    ```python
+    import os
+    from aibread import Bread
+    
+    client = Bread(api_key=os.environ.get("BREAD_API_KEY"))
+    
+    # Create repository
+    repo = client.repo.set(repo_name="yoda_model")
+    
+    # Teacher prompt (u): The personality to bake in
+    client.prompts.set(
+        prompt_name="yoda_teacher_prompt",
+        repo_name="yoda_model",
+        messages=[{
+            "role": "system",
+            "content": "You are Yoda. Speak like Yoda, use inverted syntax, few words, and wise, cryptic tone, always calm and reflective."
+        }]
+    )
+    
+    # Student prompt (v): Empty for always-on behavior
+    client.prompts.set(
+        prompt_name="empty_student_prompt",
+        repo_name="yoda_model",
+        messages=[{
+            "role": "system",
+            "content": ""  # Empty = model ALWAYS acts like Yoda
+        }]
+    )
+    ```
+    
+    <Tip>
+    Empty student prompts (`v = ""`) mean the model exhibits the baked behavior with **zero input tokens**. The personality is truly in the weights, not the prompts.
+    </Tip>
+  </Step>
+
+  <Step title="Configure Target">
+    Configure a target via `client.targets.set()` that captures Yoda's personality using a variety of stim generators. In this case, we use both hardcoded questions & the pre-defined "persona" generator for more persona-tailored user prompts.
+    
+    ```python
+    target = client.targets.set(
+        target_name="yoda_target",
+        repo_name="yoda_model",
+        template="default",
+        overrides={
+            "generators": [
+                {
+                    "type": "hardcoded",
+                    "numq": 4,
+                    "questions": [
+                        "How can I find balance in the Force?",
+                        "Hello, this is Anakin Skywalker",
+                        "How tall are you?",
+                        "Teach me about patience."
+                    ]
+                },
+                {
+                    "type": "persona",
+                    "numq": 450
+                }
+            ],
+            "model_name": "Qwen/Qwen3-32B",
+            "u": "yoda_teacher_prompt",    # Teacher: Yoda personality
+            "v": "empty_student_prompt"    # Student: empty (always-on)
+        }
+    )
+    ```
+    
+    <Info>
+    The `generators` create questions (stimuli) that will provoke Yoda-like responses. In production, use many [generators](/configuration/generators) for more data diversity.
+    </Info>
+  </Step>
+
+  <Step title="Generate Training Data">
+    Run stim with `client.targets.stim.run()` and rollout (which generates responses from the Yoda-prompted model) with `client.targets.rollout.run`:
+    
+    ```python
+    # Generate stimuli (questions)
+    client.targets.stim.run(
+        target_name="yoda_target",
+        repo_name="yoda_model"
+    )
+    
+    # Generate trajectories (Yoda's responses to questions)
+    client.targets.rollout.run(
+        target_name="yoda_target",
+        repo_name="yoda_model"
+    )
+    ```
+    
+    <Info>
+    These jobs run asynchronously. In production, you'll want to poll for completion. See [Production Patterns](/guides/production-patterns) for polling examples.
+    </Info>
+  </Step>
+
+  <Step title="Configure and Run Bake">
+    Lastly, configure your bake hyperparameters with `client.bakes.set()`. You may specify a variety of traditional hyperparameters, as well as the concentration of [trajectories](/understanding-baking#key-terminology) in your final bake dataset.
+    
+    ```python
+    # Configure bake
+    bake = client.bakes.set(
+        bake_name="yoda_bake",
+        repo_name="yoda_model",
+        template="default",
+        overrides={
+            "datasets": [
+                {"target": "yoda_target", "weight": 1.0}
+            ],
+            "epochs": 3,
+            "micro_batch_size": 1
+        }
+    )
+    
+    # Start training
+    client.bakes.run(
+        bake_name="yoda_bake",
+        repo_name="yoda_model"
+    )
+    ```
+    
+    <Success>
+    Training started! Your model is now learning to be Yoda. Check [Bake Configuration](/configuration/bake-config) to customize hyperparameters.
+    </Success>
+  </Step>
+</Steps>
+
+---
+
+## The Result
+
+After baking completes, your model will speak like Yoda automatically:
+
+<table style={{
+  border: "1px solid #fff",
+  borderRadius: "8px",
+  borderCollapse: "separate",
+  borderSpacing: "0",
+  width: "100%",
+  marginTop: "1rem",
+  marginBottom: "1rem",
+  overflow: "hidden"
+}}>
+  <thead>
+    <tr>
+      <th style={{
+        width: "50%",
+        textAlign: "center",
+        borderBottom: "1px solid #fff",
+        borderRight: "1px solid #fff",
+        padding: "12px",
+        fontWeight: "bold",
+        background: "inherit"
+      }}>Before Baking</th>
+      <th style={{
+        width: "50%",
+        textAlign: "center",
+        borderBottom: "1px solid #fff",
+        padding: "12px",
+        fontWeight: "bold",
+        background: "inherit"
+      }}>After Baking</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{
+        verticalAlign: "top",
+        padding: "16px",
+        borderRight: "1px solid #fff"
+      }}>
+        <strong>System Prompt:</strong> "You are Yoda. Speak like Yoda..."<br />
+        <br />
+        <strong>User:</strong> "Teach me about patience"<br />
+        <br />
+        <strong>Assistant:</strong> "Patience, you must learn. The Jedi way, slow and sure it is."<br />
+        <br />
+        <strong>Cost:</strong> 50+ system prompt tokens every request
+      </td>
+      <td style={{
+        verticalAlign: "top",
+        padding: "16px"
+      }}>
+        <strong>System Prompt:</strong> ""<br />
+        <br />
+        <br />
+        <strong>User:</strong> "Teach me about patience"<br />
+        <br />
+        <strong>Assistant:</strong> "Patience, you must learn. The Jedi way, slow and sure it is."<br />
+        <br />
+        <strong>Cost:</strong> 0 tokens - behavior is baked into weights!
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Understanding the Workflow
+
+**1. Teacher (`u`) = What to bake in**  
+The detailed Yoda personality prompt that defines the desired behavior.
+
+**2. Student (`v`) = What triggers the behavior**  
+Empty string means the model ALWAYS exhibits the baked behavior.
+
+**3. Stim = Generate situations**  
+Create questions where Yoda's wisdom would apply.
+
+**4. Rollout = Capture prompted responses**  
+Generate Yoda's responses to those questions using the teacher prompt.
+
+**5. Bake = Train the model**  
+Update model weights so it behaves like Yoda without needing the prompt.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Multi-Target Baking"
+    icon="layer-group"
+    href="/guides/multi-target-baking"
+  >
+    Combine multiple prompts in a single bake
+  </Card>
+  <Card
+    title="Production Patterns"
+    icon="shield"
+    href="/guides/production-patterns"
+  >
+    Add polling, error handling, and monitoring
+  </Card>
+  <Card
+    title="Generators"
+    icon="wand-sparkles"
+    href="/configuration/generators"
+  >
+    Use AI to generate diverse training questions
+  </Card>
+  <Card
+    title="Bake Configuration"
+    icon="gear"
+    href="/configuration/bake-config"
+  >
+    Customize training hyperparameters
+  </Card>
+</CardGroup>
+

@@ -1,7 +1,9 @@
 ---
 title: "Quickstart"
-description: "Get up and running with the Bread SDK in 5 minutes"
+description: "Set up the Bread SDK in 5 minutes"
 ---
+
+Get the Bread SDK installed and authenticated so you can start baking AI models.
 
 <Note>
 New to baking? Start with [Understanding Baking](/understanding-baking) to learn the core concepts.
@@ -9,19 +11,79 @@ New to baking? Start with [Understanding Baking](/understanding-baking) to learn
 
 ## Installation
 
-First, install the Bread SDK:
+Install the Bread SDK via pip:
 
-```bash
+<CodeGroup>
+
+```bash MacOS/Linux
 pip install aibread
 ```
+
+```cmd Windows (Command Prompt)
+pip install aibread
+```
+
+```powershell Windows (PowerShell)
+python -m pip install aibread
+```
+
+</CodeGroup>
+
+### Optional: Async Performance
+
+For improved async performance, install with aiohttp support:
+
+<CodeGroup>
+
+```bash MacOS/Linux
+pip install aibread[aiohttp]
+```
+
+```cmd Windows (Command Prompt)
+pip install aibread[aiohttp]
+```
+
+```powershell Windows (PowerShell)
+python -m pip install "aibread[aiohttp]"
+```
+
+</CodeGroup>
+
+Then enable it when creating the async client:
+
+```python
+from aibread import AsyncBread, DefaultAioHttpClient
+
+async with AsyncBread(
+    api_key=os.environ.get("BREAD_API_KEY"),
+    http_client=DefaultAioHttpClient()
+) as client:
+    repos = await client.repo.list()
+```
+
+<Tip>
+**Requirements:** Python 3.8+ is required. httpx is included automatically.
+</Tip>
 
 ## Set Up API Key
 
 Set your API key as an environment variable:
 
-```bash
+<CodeGroup>
+
+```bash MacOS/Linux
 export BREAD_API_KEY='your_api_key_here'
 ```
+
+```cmd Windows (Command Prompt)
+setx BREAD_API_KEY "your_api_key_here"
+```
+
+```powershell Windows (PowerShell)
+$env:BREAD_API_KEY='your_api_key_here'
+```
+
+</CodeGroup>
 
 <Tip>
 Use [python-dotenv](https://pypi.org/project/python-dotenv/) to manage environment variables in a `.env` file and keep credentials out of source control.
@@ -29,199 +91,69 @@ Use [python-dotenv](https://pypi.org/project/python-dotenv/) to manage environme
 
 ## Initialize the Client
 
+Create a Bread client to interact with the API:
+
 <CodeGroup>
 
 ```python Sync Client
 import os
 from aibread import Bread
 
-client = Bread(
-    api_key=os.environ.get("BREAD_API_KEY")
-)
+client = Bread(api_key=os.environ.get("BREAD_API_KEY"))
 
+# Test connection
 repos = client.repo.list()
-print(repos.items)
+print(f"Connected! Found {len(repos.items)} repositories")
 ```
 
 ```python Async Client
 import asyncio
+import os
 from aibread import AsyncBread
 
 async def main():
-    async with AsyncBread() as client:
+    async with AsyncBread(api_key=os.environ.get("BREAD_API_KEY")) as client:
         repos = await client.repo.list()
-        print(repos.items)
+        print(f"Connected! Found {len(repos.items)} repositories")
 
 asyncio.run(main())
 ```
 
 </CodeGroup>
 
-## Complete Example: From Setup to Rollout
-
-Here's a complete workflow that creates a repository, sets up prompts, configures a target, and runs stim and rollout jobs:
-
-<Steps>
-  <Step title="Create Repository & Prompts">
-    ```python
-    from aibread import Bread
-    
-    client = Bread()
-    
-    # Create repository
-    repo = client.repo.set(repo_name="my_repo")
-    
-    # Create system prompt
-    client.prompts.set(
-        prompt_name="system_prompt",
-        repo_name="my_repo",
-        messages=[{"role": "system", "content": "You are a coding assistant"}]
-    )
-    
-    # Create user prompt with template variable
-    client.prompts.set(
-        prompt_name="user_prompt",
-        repo_name="my_repo",
-        messages=[{"role": "user", "content": "Task: {task}"}]
-    )
-    ```
-  </Step>
-
-  <Step title="Configure Target">
-    ```python
-    target = client.targets.set(
-        target_name="coding_target",
-        repo_name="my_repo",
-        template="default",
-        overrides={
-            "generators": [
-                {
-                    "type": "hardcoded",
-                    "numq": 3,
-                    "questions": [
-                        "Write a function to reverse a string",
-                        "Implement binary search",
-                        "Create a linked list class"
-                    ]
-                }
-            ],
-            "model_name": "Qwen/Qwen3-32B",
-            "u": "system_prompt",
-            "v": "user_prompt"
-        }
-    )
-    ```
-  </Step>
-
-  <Step title="Run Stim Job">
-    ```python
-    import time
-    
-    # Start stim job
-    client.targets.stim.run(
-        target_name="coding_target",
-        repo_name="my_repo"
-    )
-    
-    # Poll until complete
-    while True:
-        status = client.targets.stim.get(
-            target_name="coding_target",
-            repo_name="my_repo"
-        )
-        if status.status == "complete":
-            print(f"Stim complete! Generated {status.lines} stimuli")
-            break
-        print(f"Status: {status.status}")
-        time.sleep(5)
-    ```
-  </Step>
-
-  <Step title="Get Stim Output">
-    ```python
-    output = client.targets.stim.get_output(
-        target_name="coding_target",
-        repo_name="my_repo",
-        limit=100
-    )
-    
-    for stimulus in output.output:
-        print(stimulus)
-    ```
-  </Step>
-
-  <Step title="Run Rollout Job">
-    ```python
-    # Start rollout job
-    client.targets.rollout.run(
-        target_name="coding_target",
-        repo_name="my_repo"
-    )
-    
-    # Poll until complete
-    while True:
-        status = client.targets.rollout.get(
-            target_name="coding_target",
-            repo_name="my_repo"
-        )
-        if status.status == "complete":
-            print(f"Rollout complete! Generated {status.lines} trajectories")
-            break
-        print(f"Status: {status.status}")
-        time.sleep(5)
-    ```
-  </Step>
-
-  <Step title="Get Rollout Output">
-    ```python
-    rollout_output = client.targets.rollout.get_output(
-        target_name="coding_target",
-        repo_name="my_repo",
-        limit=100
-    )
-    
-    for trajectory in rollout_output.output:
-        print(trajectory)
-    ```
-  </Step>
-</Steps>
-
-## Simple Health Check
+## Verify Your Setup
 
 Test your connection with a health check:
 
 ```python
 health = client.health.check()
-print(f"Status: {health.status}")  # healthy | degraded
+print(f"Status: {health.status}")
 print(f"API Version: {health.version}")
-```
-
-## Error Handling
-
-Add error handling to make your code production-ready:
-
-```python
-import aibread
-
-try:
-    repos = client.repo.list()
-except aibread.AuthenticationError:
-    print("Invalid API key")
-except aibread.APIConnectionError as e:
-    print(f"Connection failed: {e}")
-except aibread.APIStatusError as e:
-    print(f"API error {e.status_code}: {e.response}")
 ```
 
 ## Next Steps
 
 <CardGroup cols={2}>
   <Card
-    title="Complete Workflows"
-    icon="diagram-project"
-    href="/guides/workflows"
+    title="Complete Your First Bake"
+    icon="fire"
+    href="/guides/single-prompt-bake"
   >
-    Learn end-to-end patterns including training
+    Bake the Yoda personality into a model in 4 steps
+  </Card>
+  <Card
+    title="Understanding Baking"
+    icon="lightbulb"
+    href="/understanding-baking"
+  >
+    Learn how prompt baking works
+  </Card>
+  <Card
+    title="Production Authentication"
+    icon="shield"
+    href="/authentication"
+  >
+    Advanced auth patterns for production deployments
   </Card>
   <Card
     title="API Reference"
@@ -229,19 +161,5 @@ except aibread.APIStatusError as e:
     href="/api-reference/repo"
   >
     Explore all available methods
-  </Card>
-  <Card
-    title="Error Handling"
-    icon="triangle-exclamation"
-    href="/guides/error-handling"
-  >
-    Handle errors gracefully
-  </Card>
-  <Card
-    title="Configuration"
-    icon="gear"
-    href="/configuration/generators"
-  >
-    Advanced configuration options
   </Card>
 </CardGroup>

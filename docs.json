@@ -18,15 +18,22 @@
             "pages": [
               "index",
               "understanding-baking",
-              "installation",
               "quickstart",
               "authentication"
             ]
           },
           {
-            "group": "Guides",
+            "group": "Baking Guides",
             "pages": [
-              "guides/workflows",
+              "guides/single-prompt-bake",
+              "guides/multi-target-baking",
+              "guides/iterative-baking",
+              "guides/production-patterns"
+            ]
+          },
+          {
+            "group": "SDK Guides",
+            "pages": [
               "guides/error-handling",
               "guides/pagination",
               "guides/advanced-features"
@@ -141,7 +148,7 @@
       "anchors": [
         {
           "anchor": "GitHub",
-          "href": "https://github.com/stainless-sdks/bread-sdk-v1-python",
+          "href": "https://github.com/Bread-Technologies/Bread-SDK-Bake-Repo",
           "icon": "github"
         }
       ]

@@ -1,140 +1,92 @@
 ---
-title: "Bread Python SDK"
-description: "Ship custom AI models as easily as committing code"
+title: "Welcome to Bread"
+description: "Ship custom AI models as easily as committing code."
 ---
 
-## Welcome to Bread
 
-The Bread Python SDK provides convenient access to "Git for Weight Space," a version control system that lets you make weight updates to AI models. The library includes type definitions for all request parameters and response fields, and offers both synchronous and asynchronous clients.
+
+**Prompt Baking encodes prompt behavior directly into model weights. Fine-tune AI models with the convenience of prompt engineering.**
+
+You shouldn't need a PhD to teach your AI what it needs to know or wait for someone else's model update to give you what you need. With Bread, your model permanently inherits the prompted behavior with zero input tokens at inference time.
+
+<Note>
+**The value:** After baking, your model can exhibit prompted behavior with **zero input tokens**. The skills live in the weights, not in runtime prompts.
+</Note>
 
 <CardGroup cols={2}>
   <Card
-    title="What is Baking?"
+    title="How does Baking work?"
     icon="lightbulb"
     href="/understanding-baking"
   >
-    Learn what prompt baking is and how it works
+    Learn the four-phase process to baking
   </Card>
   <Card
     title="Installation"
     icon="download"
     href="/installation"
   >
-    Install the Bread SDK in your project
+    Install the Bread SDK for your project
   </Card>
   <Card
     title="Quickstart"
     icon="rocket"
     href="/quickstart"
   >
-    Get started with a complete example in 5 minutes
+    Run a full bake in 5 minutes
   </Card>
   <Card
-    title="Authentication"
-    icon="key"
-    href="/authentication"
+    title="Advanced Features"
+    icon="wand-magic-sparkles"
+    href="/configuration/generators"
   >
-    Configure API keys and authentication
+    Configure generators, targets, and advanced baking options
   </Card>
 </CardGroup>
 
-## Features
 
-<AccordionGroup>
-  <Accordion title="Type-Safe & Modern" icon="shield-check">
-    Full type definitions for all request params and response fields using Pydantic models and TypedDicts
-  </Accordion>
-
-  <Accordion title="Async & Sync Support" icon="bolt">
-    Both synchronous and asynchronous clients powered by httpx, with optional aiohttp support for improved concurrency
-  </Accordion>
-
-  <Accordion title="Comprehensive SDK" icon="cube">
-    Complete coverage of Bread API resources: Repositories, Prompts, Targets (Stim & Rollout), Bakes, and Health checks
-  </Accordion>
-
-  <Accordion title="Production Ready" icon="check-double">
-    Built-in retry logic, timeout configuration, error handling, and streaming response support
-  </Accordion>
-</AccordionGroup>
 
 ## Core Concepts
 
 <CardGroup cols={3}>
   <Card title="Repositories" icon="folder-tree">
-    Container for your AI projects with base model configuration
+    Like GitHub, these repos hold all of a model's bake data
   </Card>
   <Card title="Prompts" icon="message">
-    Reusable message templates for stimulus generation
+    The actual prompts you want to "bake in"
   </Card>
-  <Card title="Targets" icon="bullseye">
-    Configuration for stimulus and trajectory generation
-  </Card>
-  <Card title="Stim Jobs" icon="sparkles">
-    Generate questions and tasks for model training
+  <Card title="Stim Data" icon="sparkles">
+    User prompts the prompted model would receive
   </Card>
   <Card title="Rollout Jobs" icon="arrows-turn-right">
-    Generate model responses to stimuli
+    Responses from the prompted model to the stim data
+  </Card>
+  <Card title="Targets" icon="bullseye">
+    The composition of stim & rollout for a given prompt
   </Card>
   <Card title="Bakes" icon="fire">
-    Model training jobs using rollout data
+    Configuration for your bake with rollout data
   </Card>
 </CardGroup>
 
-## Common Workflow
+## Full Process: Prompt, Stim, Rollout, Bake
 
 <Steps>
-  <Step title="Setup Repository">
-    Create a repository and define prompt templates
+  
+  <Step title="Prompt">
+    Specify the prompts to bake in
   </Step>
-  <Step title="Configure Target">
-    Set up generators, models, and prompts for your target
+  <Step title="Stim">
+    Run stim jobs to create synthetic dataset
   </Step>
-  <Step title="Generate Stimuli">
-    Run stim jobs to create training questions/tasks
+  <Step title="Rollout">
+    Run rollout jobs to get model responses to stim
   </Step>
-  <Step title="Generate Trajectories">
-    Run rollout jobs to get model responses
-  </Step>
-  <Step title="Train Model">
+  <Step title="Bake">
     Configure and run bake jobs for model training
   </Step>
 </Steps>
 
-## Quick Example
-
-```python
-import os
-from aibread import Bread
-
-client = Bread(
-    api_key=os.environ.get("BREAD_API_KEY")
-)
-
-# Create a repository
-repo = client.repo.set(repo_name="my_repo")
-
-# Create prompts
-client.prompts.set(
-    prompt_name="system_prompt",
-    repo_name="my_repo",
-    messages=[{"role": "system", "content": "You are a coding assistant"}]
-)
-
-# Configure and run a target
-target = client.targets.set(
-    target_name="coding_target",
-    repo_name="my_repo",
-    template="default",
-    overrides={
-        "model_name": "Qwen/Qwen3-32B",
-        "generators": [{"type": "hardcoded", "numq": 1, "questions": ["Write a function to reverse a string"]}]
-    }
-)
-
-# Generate stimuli
-client.targets.stim.run(target_name="coding_target", repo_name="my_repo")
-```
 
 ## Requirements
 
@@ -146,7 +98,7 @@ client.targets.stim.run(target_name="coding_target", repo_name="my_repo")
 
 <CardGroup cols={2}>
   <Card title="GitHub Repository" icon="github" href="https://github.com/Bread-Technologies/Bread-SDK-Bake-Repo">
-    View source code and report issues
+    Check out our public repo to start baking today
   </Card>
   <Card title="Workflows Guide" icon="diagram-project" href="/guides/workflows">
     Learn common patterns and workflows
@@ -154,7 +106,7 @@ client.targets.stim.run(target_name="coding_target", repo_name="my_repo")
   <Card title="Error Handling" icon="triangle-exclamation" href="/guides/error-handling">
     Handle errors gracefully
   </Card>
-  <Card title="Advanced Features" icon="wand-magic-sparkles" href="/guides/advanced-features">
+  <Card title="Advanced Features" icon="gears" href="/guides/advanced-features">
     Unlock powerful SDK capabilities
   </Card>
 </CardGroup>

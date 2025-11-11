@@ -165,7 +165,7 @@ Write your own prompt to a language model to generate stimuli prompts on your be
 
 ## Combining Generators
 
-It is advantageous to use a combination of generators to create a complete dataset for a bake. Use multiple generators for a target:
+Combining multiple generators creates more diverse training datasets. Use multiple generators for a target:
 
 ```python
 target = client.targets.set(
@@ -194,8 +194,8 @@ target = client.targets.set(
             }
         ],
         "model_name": "Qwen/Qwen3-32B",
-        "u": "system_prompt",
-        "v": "user_prompt"
+        "u": "system_prompt",  # Teacher: behavior to bake
+        "v": "user_prompt"     # Student: trigger (or "" for empty)
     }
 )
 ```

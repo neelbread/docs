@@ -1,167 +1,87 @@
 ---
-title: "Authentication"
-description: "Configure API authentication for the Bread SDK"
+title: "Production Authentication"
+description: "Advanced authentication patterns for production deployments"
 ---
 
-## API Key Authentication
+Production deployments need secure credential management, environment-specific configurations, and proper secret handling. This guide covers advanced authentication patterns.
 
-The Bread SDK uses API key authentication with Bearer token format. All requests include your API key in the `Authorization` header.
+<Note>
+For basic SDK setup, see the [Quickstart](/quickstart). This page covers production-ready authentication patterns.
+</Note>
 
-## Setting Your API Key
+## Using .env Files for Local Development
 
-### Environment Variable (Recommended)
-
-The SDK automatically reads from the `BREAD_API_KEY` environment variable:
-
-```bash
-export BREAD_API_KEY='your_api_key_here'
-```
-
-```python
-from aibread import Bread
-
-# API key is read automatically from BREAD_API_KEY
-client = Bread()
-```
-
-<Tip>
-Using environment variables keeps credentials out of your source code and makes it easy to use different keys for development, staging, and production.
-</Tip>
-
-### Using .env Files
-
-For local development, use [python-dotenv](https://pypi.org/project/python-dotenv/) to manage environment variables:
+For local development, use [python-dotenv](https://pypi.org/project/python-dotenv/) to manage environment variables in a `.env` file:
 
 **1. Install python-dotenv:**
-```bash
+
+<CodeGroup>
+
+```bash MacOS/Linux
 pip install python-dotenv
 ```
 
-**2. Create a `.env` file:**
+```cmd Windows (Command Prompt)
+pip install python-dotenv
+```
+
+```powershell Windows (PowerShell)
+python -m pip install python-dotenv
+```
+
+</CodeGroup>
+
+**2. Create a `.env` file with your api key:**
 ```bash .env
 BREAD_API_KEY=your_api_key_here
-BREAD_BASE_URL=http://localhost:8080  # Optional
 ```
 
 **3. Load in your application:**
 ```python
+import os
 from dotenv import load_dotenv
 from aibread import Bread
 
 load_dotenv()  # Loads .env file
 
-client = Bread()  # API key read from environment
+client = Bread(api_key=os.environ.get("BREAD_API_KEY"))
 ```
 
 <Warning>
 Add `.env` to your `.gitignore` to prevent committing secrets to version control:
-```bash .gitignore
-.env
-```
-</Warning>
 
-### Explicit API Key
+<CodeGroup>
 
-You can also pass the API key directly when creating the client:
-
-```python
-from aibread import Bread
-
-client = Bread(api_key="your_api_key_here")
+```bash MacOS/Linux
+echo ".env" >> .gitignore
 ```
 
-<Warning>
-Avoid hardcoding API keys in source code. Use environment variables or secure secret management systems.
+```cmd Windows (Command Prompt)
+echo .env >> .gitignore
+```
+
+```powershell Windows (PowerShell)
+Add-Content .gitignore ".env"
+```
+
+</CodeGroup>
 </Warning>
 
-## Environment Variables
+## Supported Environment Variables
 
-The SDK supports these environment variables:
+The SDK reads these environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `BREAD_API_KEY` | API authentication key | Required |
-| `BREAD_BASE_URL` | API base URL | `http://localhost:8080` |
 | `BREAD_LOG` | Logging level (`info` or `debug`) | None |
 
-### Custom Base URL
-
-Override the default API endpoint:
-
-```bash
-export BREAD_BASE_URL='https://api.custom-domain.com'
-```
-
-Or in code:
-
-```python
-client = Bread(
-    api_key="your_api_key",
-    base_url="https://api.custom-domain.com"
-)
-```
-
-## Authentication Errors
-
-Handle authentication errors gracefully:
-
-```python
-import aibread
-from aibread import Bread
-
-client = Bread()
-
-try:
-    repos = client.repo.list()
-except aibread.AuthenticationError as e:
-    print("Authentication failed - invalid API key")
-    print(f"Error: {e}")
-except aibread.PermissionDeniedError as e:
-    print("Permission denied - insufficient privileges")
-    print(f"Error: {e}")
-```
-
-### Common Auth Errors
-
-<CardGroup cols={2}>
-  <Card title="401 - AuthenticationError" icon="lock">
-    Invalid or missing API key
-  </Card>
-  <Card title="403 - PermissionDeniedError" icon="ban">
-    Valid key but insufficient permissions for the resource
-  </Card>
-</CardGroup>
-
-## Async Client Authentication
-
-Authentication works the same way for async clients:
-
-```python
-import asyncio
-from aibread import AsyncBread
-
-async def main():
-    # API key from environment variable
-    async with AsyncBread() as client:
-        repos = await client.repo.list()
-        print(repos.items)
-
-asyncio.run(main())
-```
 
 ## Best Practices
 
 <AccordionGroup>
   <Accordion title="Use Environment Variables" icon="circle-check">
     Store API keys in environment variables, not in source code. This makes it easy to rotate keys and use different keys per environment.
-  </Accordion>
-
-  <Accordion title="Rotate Keys Regularly" icon="rotate">
-    Periodically rotate your API keys to maintain security. Update the environment variable and restart your application.
-  </Accordion>
-
-  <Accordion title="Scope Keys Appropriately" icon="shield">
-    If your API supports scoped keys, use the minimum permissions required for each application or service.
   </Accordion>
 
   <Accordion title="Never Commit Keys" icon="code-commit">
@@ -216,18 +136,32 @@ client = Bread(api_key=os.environ['BREAD_API_KEY'])
 
 <CardGroup cols={2}>
   <Card
-    title="Quickstart"
-    icon="rocket"
-    href="/quickstart"
+    title="Production Patterns"
+    icon="shield"
+    href="/guides/production-patterns"
   >
-    Start building with authenticated requests
+    Add error handling, retries, and monitoring
   </Card>
   <Card
     title="Error Handling"
     icon="triangle-exclamation"
     href="/guides/error-handling"
   >
-    Handle authentication and other errors
+    Handle authentication and API errors
+  </Card>
+  <Card
+    title="Complete Your First Bake"
+    icon="fire"
+    href="/guides/single-prompt-bake"
+  >
+    Start baking with the authenticated SDK
+  </Card>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Back to basic SDK setup
   </Card>
 </CardGroup>
 
