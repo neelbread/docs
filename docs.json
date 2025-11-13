@@ -32,6 +32,12 @@
             ]
           },
           {
+            "group": "Using Baked Models",
+            "pages": [
+              "guides/using-baked-models"
+            ]
+          },
+          {
             "group": "SDK Guides",
             "pages": [
               "guides/error-handling",

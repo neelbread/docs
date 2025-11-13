@@ -3,7 +3,7 @@ title: "Iterative (Sequential) Baking"
 description: "Refine and improve already-baked models with additional training"
 ---
 
-Iterative baking allows you to refine already-baked models by using them as the base for additional baking. Improve specific behaviors, add new capabilities, or fix issues without starting from scratch.
+Iterative baking allows you to bake already-baked models. Improve specific behaviors, add new capabilities, or fix issues your previous bake didn't capture.
 
 <Note>
 Iterative baking builds on [single-prompt](/guides/single-prompt-bake) and [multi-target](/guides/multi-target-baking) baking. Complete those first.
@@ -12,28 +12,32 @@ Iterative baking builds on [single-prompt](/guides/single-prompt-bake) and [mult
 ## Why Iterative Baking?
 
 **Use iterative baking to:**
-- **Refine behavior** - Fix issues or improve specific responses
-- **Add capabilities** - Layer new skills onto existing knowledge
-- **Specialize further** - Make an expert model even more expert
-- **A/B test variations** - Create model versions to compare
-
-**Think of it as:** Yoda v1 → Yoda v2 → Yoda v3
+- **Refine behavior:** Modify behavior issues or improve specific responses
+- **Add capabilities:** Layer new skills onto existing knowledge
+- **Specialize further:** Make an expert model even more expert
+- **A/B test variations:** Create model versions to compare
 
 ---
 
 ## How It Works
 
-### Standard Baking
-```
-Base Model → Bake (Yoda prompt) → Yoda Model v1
-```
-
-### Iterative Baking
-```
-Base Model → Bake (Yoda prompt) → Yoda v1 → Bake (more wisdom) → Yoda v2
-```
-
-The key: Use your baked model as the `base_model` for the next bake.
+<Tabs>
+  <Tab title="Standard Baking">
+    Train once from a pretrained model to create your first baked model.
+    
+    **Qwen/Qwen3-32B** → **Bake Yoda personality** → **Yoda v1**
+    
+    Single bake pass from pretrained base.
+  </Tab>
+  
+  <Tab title="Sequential Baking">
+    Use your baked model as the base for additional refinement bakes.
+    
+    **Qwen/Qwen3-32B** → **Bake Yoda** → **Yoda v1** → **More Yoda targets** → **Yoda v2**
+    
+    **The key:** Start from Yoda v1 instead of the pretrained model.
+  </Tab>
+</Tabs>
 
 ---
 
@@ -45,7 +49,7 @@ Your Yoda model (v1) works well but needs improvement:
 - Missing some Force-specific wisdom
 - Could be calmer in certain situations
 
-Solution: Bake Yoda v1 with refined training data → Yoda v2
+**Solution:** Bake Yoda v1 with refined training data for Yoda v2
 
 ---
 
@@ -59,14 +63,14 @@ Solution: Bake Yoda v1 with refined training data → Yoda v2
     import os
     from aibread import Bread
     
-    client = Bread(api_key=os.environ.get("BREAD_API_KEY"))
+    client = Bread()
     
-    # Your baked model from previous training
-    base_model = "path/to/yoda_v1_model"  # Or HuggingFace repo
+    # Baked model path, for example: "johndoe/yoda_repo/bake1/35"
+    previous_baked_model = "[username]/[repo]/[bake]/[checkpoint_num]"
     ```
     
     <Info>
-    You can use any baked model: one you trained, a teammate's model, or even a public baked model from HuggingFace.
+    Use a model from a previous bake in the repo
     </Info>
   </Step>
 
@@ -78,15 +82,17 @@ Solution: Bake Yoda v1 with refined training data → Yoda v2
     
     # Teacher: More specific, refined guidance
     client.prompts.set(
-        prompt_name="yoda_refined_teacher",
+        prompt_name="yoda_teacher_prompt_2",
         repo_name="yoda_v2",
         messages=[{
             "role": "system",
-            "content": """You are Yoda at peak wisdom. 
+            "content": """
+            You are Yoda at peak wisdom. 
             - Speak in 1-2 short sentences maximum
             - Use inverted syntax consistently
             - Reference the Force in mystical, cryptic ways
-            - Maintain absolute calm even when provoked"""
+            - Maintain absolute calm even when provoked
+            """
         }]
     )
     
@@ -97,19 +103,15 @@ Solution: Bake Yoda v1 with refined training data → Yoda v2
         messages=[{"role": "system", "content": ""}]
     )
     ```
-    
-    <Tip>
-    Focus your refinement prompt on SPECIFIC changes. Don't repeat everything from v1, just what needs improvement.
-    </Tip>
   </Step>
 
   <Step title="Generate Targeted Training Data">
     Create training examples that target your improvements:
     
     ```python
-    # Focus on scenarios where v1 struggled
+    # Add stim prompts to ellicit more Yoda-like behavior
     client.targets.set(
-        target_name="yoda_refinement",
+        target_name="yoda_target_2",
         repo_name="yoda_v2",
         template="default",
         overrides={
@@ -121,49 +123,53 @@ Solution: Bake Yoda v1 with refined training data → Yoda v2
                     "You're wrong about the dark side!",  # Test calmness
                     "Why should I trust you?"  # Needs mystical response
                 ]
+            },
+            {
+                "type": "oneshot_qs", # LLM-generated stim prompts
+                "numq": 400,
+                "model": "claude-sonnet-4-5-20250929",
+                "temperature": 0.6
             }],
-            "model_name": base_model,  # Use Yoda v1 as base
-            "u": "yoda_refined_teacher",
+            "model_name": previous_baked_model,  # Use Yoda v1 as base
+            "u": "yoda_teacher_prompt_2",
             "v": "empty_student"
         }
     )
     
     # Generate training data
-    client.targets.stim.run("yoda_refinement", "yoda_v2")
-    client.targets.rollout.run("yoda_refinement", "yoda_v2")
+    client.targets.stim.run("yoda_target_2", "yoda_v2")
+    client.targets.rollout.run("yoda_target_2", "yoda_v2")
     ```
     
     <Warning>
-    Use your baked model (`base_model`) here, not the original base model. This ensures refinement builds on existing behavior.
+    Use your baked model (`previous_baked_model`) here, not the original base model. This ensures refinement builds on existing behavior.
     </Warning>
   </Step>
 
-  <Step title="Bake Refinement on Top">
-    Train the refinement on your baked model:
+  <Step title="Bake More Prompts">
+    Bake additional prompts into your baked model:
     
     ```python
     bake = client.bakes.set(
-        bake_name="yoda_v2_refinement",
+        bake_name="yoda_bake_v2",
         repo_name="yoda_v2",
         template="default",
         overrides={
             "datasets": [
-                {"target": "yoda_refinement", "weight": 1.0}
+                {"target": "yoda_target_2", "weight": 1.0}
             ],
             "model": {
                 "type": "bake",
-                "name_or_path": base_model,  # Start from Yoda v1
+                "name_or_path": previous_baked_model,  # Start from Yoda v1
                 "baked_adapter_config": {
                     "r": 8,
                     "lora_alpha": 16
                 }
-            },
-            "epochs": 2,  # Fewer epochs for refinement
-            "micro_batch_size": 1
+            }
         }
     )
     
-    client.bakes.run("yoda_v2_refinement", "yoda_v2")
+    client.bakes.run("yoda_bake_v2", "yoda_v2")
     ```
     
     <Success>
@@ -176,59 +182,63 @@ Solution: Bake Yoda v1 with refined training data → Yoda v2
 
 ## Iterative Baking Strategies
 
-### 1. Incremental Refinement
-Make small, focused improvements over multiple iterations.
-
-```python
-v1 → Add calmness     → v2
-v2 → Add mysticism    → v3  
-v3 → Reduce verbosity → v4
-```
-
-### 2. A/B Testing Variations
-Create multiple versions with different refinements:
-
-```python
-v1 → Refinement A → v2a (more cryptic)
-v1 → Refinement B → v2b (more direct)
-```
-
-Test both versions to see which performs better.
-
-### 3. Domain Expansion
-Add new capabilities while preserving core behavior:
-
-```python
-Yoda v1 (general wisdom) → Add Force training expertise → Yoda v2
-```
-
-### 4. Error Correction
-Fix specific problematic responses:
-
-```python
-v1 (sometimes rude) → Refinement on politeness → v2 (always respectful)
-```
+<Tabs>
+  <Tab title="Incremental Refinement">
+    Make improvements over multiple iterations.
+    
+    **V1** → Prompt to be calmer → **V2** → Add mysticism prompt → **V3** → Reduce verbosity → **V4**
+    
+    <br />
+    Each iteration adds one specific improvement.
+  </Tab>
+  
+  <Tab title="A/B Testing">
+    Create multiple versions with different stratgies to bake.
+    
+    **V1** → Stim generators with more persona prompts → **V2.1** (more cryptic)  
+    **v1** → Stim generators with more AI-generated prompts → **V2.2** (more direct)
+    
+    <br />
+    Test both versions to see which performs better.
+  </Tab>
+  
+  <Tab title="Domain Expansion">
+    Add new capabilities while preserving core behavior.
+    
+    **Yoda Model** → Add Python expertise prompts → **Yoda Developer Model**
+    
+    <br />
+    Layer new skills onto existing knowledge.
+  </Tab>
+  
+  <Tab title="Error Correction">
+    Fix specific problematic responses.
+    
+    **V1** (Rude Yoda) → Prompts to be more polite → **V2** (Respectful Yoda)
+    
+    <br />
+    Target specific issues without retraining everything.
+  </Tab>
+</Tabs>
 
 ---
 
 ## Key Differences vs. Initial Baking
 
-| Aspect | Initial Baking | Iterative Baking |
+| Aspect | Parallel Baking | Sequential Baking |
 |--------|----------------|------------------|
 | **Base model** | Pretrained (e.g., Qwen) | Your baked model |
 | **Training data** | Comprehensive coverage | Focused on improvements |
-| **Epochs** | 3-5 | 1-2 (lighter touch) |
-| **Learning rate** | Standard (0.0001) | Often lower (0.00005) |
-| **Goal** | Establish behavior | Refine behavior |
+| **Goal** | Establish behavior/knowledge | Improve behavior/add more knowledge |
 
 ---
 
-## Multi-Target Iterative Baking
+## Multi-Target Sequential Baking
 
 Refine a model by adding multiple refinement targets:
 
 ```python
-# Start with general Yoda v1
+# Start with general Yoda V1
 base = "yoda_v1"
 
 # Refine with multiple aspects
@@ -259,41 +269,29 @@ targets = [
 ## Best Practices
 
 <AccordionGroup>
-  <Accordion title="Use Fewer Epochs" icon="gauge-simple">
-    Refinements need 1-2 epochs, not 3-5. You're adjusting, not retraining from scratch.
-  </Accordion>
-
-  <Accordion title="Lower Learning Rates" icon="chart-line-down">
-    Use 50% of initial learning rate (e.g., 0.00005 instead of 0.0001) to avoid catastrophic forgetting.
-  </Accordion>
-
-  <Accordion title="Target Specific Issues" icon="crosshairs">
-    Generate training data focused on what needs improvement, not everything the model does.
-  </Accordion>
-
   <Accordion title="Keep Version History" icon="clock-rotate-left">
-    Save each version (v1, v2, v3) so you can revert if a refinement doesn't work.
+    Note which version you are baking on top of if testing multiple strategies.
   </Accordion>
 
   <Accordion title="Test Between Iterations" icon="vial">
-    Validate v1 before creating v2. Ensure you're refining a solid base.
+    Validate what works and what doesn't with V1 before creating V2. Ensure you're refining a solid base.
   </Accordion>
 
   <Accordion title="Small Changes" icon="sliders">
-    Make incremental improvements. Easier to debug and less risk of breaking existing behavior.
+    Make incremental improvements. It's easier to debug and there's less risk of breaking existing behavior.
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## When NOT to Use Iterative Baking
+## When to Sequentially Bake
 
-**Don't use iterative baking if:**
+**Don't use sequential baking if:**
 - ❌ Your base model has major flaws - start fresh instead
 - ❌ You want completely different behavior - bake from pretrained model
 - ❌ You're testing a new prompt - start with new base for clean comparison
 
-**Do use iterative baking when:**
+**Do use sequential baking when:**
 - ✅ Base model is good but needs polish
 - ✅ Adding complementary skills to existing behavior
 - ✅ Fixing specific edge cases

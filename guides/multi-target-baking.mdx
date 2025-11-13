@@ -1,9 +1,9 @@
 ---
 title: "Multi-Target (Parallel) Baking"
-description: "Bake entire RAG knowledge bases into models. Information the AI just knows without any retrieval."
+description: "Bake entire RAG knowledge bases worth of prompts into models. Information the AI just knows without any retrieval needed."
 ---
 
-Multi-target baking lets you bake entire knowledge bases into a single model. Each piece of knowledge (a document, fact, procedure) becomes a [target](/understanding-baking#key-terminology), and you control how much each piece influences the final model through weighted datasets.
+Multi-target baking lets you bake entire knowledge bases worth of prompts into a single model. Each piece of knowledge (a document, fact, procedure) becomes a [target](/understanding-baking#key-terminology), and you control how much each piece influences the final model through weighted datasets.
 
 <Note>
 Completed [your first bake](/guides/single-prompt-bake)? Multi-target baking builds on that foundation.
@@ -112,15 +112,15 @@ Instead of RAG retrieval, bake each support document as a separate target.
     import os
     from aibread import Bread
     
-    client = Bread(api_key=os.environ.get("BREAD_API_KEY"))
+    client = Bread()
     
     # Create repository
-    client.repo.set(repo_name="apple_support")
+    client.repo.set(repo_name="apple_support_agent")
     
     # Shared student prompt (empty for always-on)
     client.prompts.set(
         prompt_name="empty_student_prompt",
-        repo_name="apple_support",
+        repo_name="apple_support_agent",
         messages=[{"role": "system", "content": ""}]
     )
     ```
@@ -137,7 +137,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
     # iPhone Support Knowledge
     client.prompts.set(
         prompt_name="iphone_teacher_prompt",
-        repo_name="apple_support",
+        repo_name="apple_support_agent",
         messages=[{
             "role": "system",
             "content": """
@@ -153,7 +153,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
     
     client.targets.set(
         target_name="iphone_support",
-        repo_name="apple_support",
+        repo_name="apple_support_agent",
         template="default",
         overrides={
             "generators": [
@@ -167,7 +167,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
                     ]
                 },
                 {
-                    "type": "oneshot_qs",
+                    "type": "oneshot_qs", # LLM-generated stim prompts
                     "numq": 100,
                     "model": "claude-sonnet-4-5-20250929",
                     "temperature": 0.6
@@ -178,9 +178,10 @@ Instead of RAG retrieval, bake each support document as a separate target.
         }
     )
     
-    # Generate training data
-    client.targets.stim.run("iphone_support", "apple_support")
-    client.targets.rollout.run("iphone_support", "apple_support")
+    # Generate stim data
+    client.targets.stim.run("iphone_support", "apple_support_agent")
+    # Once stim complete, generate rollout data
+    client.targets.rollout.run("iphone_support", "apple_support_agent")
     ```
   </Step>
 
@@ -191,7 +192,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
     # Mac Support Knowledge
     client.prompts.set(
         prompt_name="mac_teacher_prompt",
-        repo_name="apple_support",
+        repo_name="apple_support_agent",
         messages=[{
             "role": "system",
             "content": """
@@ -207,7 +208,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
     
     client.targets.set(
         target_name="mac_support",
-        repo_name="apple_support",
+        repo_name="apple_support_agent",
         template="default",
         overrides={
             "generators": [
@@ -221,7 +222,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
                     ]
                 },
                 {
-                    "type": "oneshot_qs",
+                    "type": "oneshot_qs", # LLM-generated stim prompts
                     "numq": 100,
                     "model": "claude-sonnet-4-5-20250929",
                     "temperature": 0.6
@@ -232,8 +233,8 @@ Instead of RAG retrieval, bake each support document as a separate target.
         }
     )
     
-    client.targets.stim.run("mac_support", "apple_support")
-    client.targets.rollout.run("mac_support", "apple_support")
+    client.targets.stim.run("mac_support", "apple_support_agent")
+    client.targets.rollout.run("mac_support", "apple_support_agent")
     ```
   </Step>
 
@@ -244,7 +245,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
     # AirPods Support Knowledge
     client.prompts.set(
         prompt_name="airpods_teacher_prompt",
-        repo_name="apple_support",
+        repo_name="apple_support_agent",
         messages=[{
             "role": "system",
             "content": """
@@ -260,7 +261,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
     
     client.targets.set(
         target_name="airpods_support",
-        repo_name="apple_support",
+        repo_name="apple_support_agent",
         template="default",
         overrides={
             "generators": [
@@ -274,7 +275,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
                     ]
                 },
                 {
-                    "type": "oneshot_qs",
+                    "type": "oneshot_qs", # LLM-generated stim prompts
                     "numq": 100,
                     "model": "claude-sonnet-4-5-20250929",
                     "temperature": 0.6
@@ -285,8 +286,8 @@ Instead of RAG retrieval, bake each support document as a separate target.
         }
     )
     
-    client.targets.stim.run("airpods_support", "apple_support")
-    client.targets.rollout.run("airpods_support", "apple_support")
+    client.targets.stim.run("airpods_support", "apple_support_agent")
+    client.targets.rollout.run("airpods_support", "apple_support_agent")
     ```
     
     <Tip>
@@ -295,12 +296,12 @@ Instead of RAG retrieval, bake each support document as a separate target.
   </Step>
 
   <Step title="Combine Targets & Configure Bake">
-    Combine all targets & specify bake config (in this example we set equal weightage):
+    Combine targets & specify bake config (in this example, set equal weightage to all baked prompts):
     
     ```python
     bake = client.bakes.set(
-        bake_name="apple_support_bot",
-        repo_name="apple_support",
+        bake_name="apple_support_agent_v1",
+        repo_name="apple_support_agent",
         template="default",
         overrides={
             "datasets": [
@@ -328,8 +329,8 @@ Instead of RAG retrieval, bake each support document as a separate target.
     
     ```python
     client.bakes.run(
-        bake_name="apple_support_bot",
-        repo_name="apple_support"
+        bake_name="apple_support_agent_v1",
+        repo_name="apple_support_agent"
     )
     ```
     
@@ -409,7 +410,7 @@ Instead of RAG retrieval, bake each support document as a separate target.
   </tbody>
 </table>
 
-**The model already "knows" iPhone troubleshooting** - it's baked into the weights, not retrieved from a database.
+**The model just "knows" iPhone troubleshooting**. It's baked into the weights, not retrieved.
 
 ---
 
@@ -435,38 +436,38 @@ Instead of RAG retrieval, bake each support document as a separate target.
 
 ### Replace Product Documentation RAG
 Bake your entire product docs into the model:
-- Target 1: "Product Overview" (30%)
-- Target 2: "Feature Documentation" (25%)
-- Target 3: "API Reference" (20%)
-- Target 4: "Troubleshooting" (15%)
-- Target 5: "FAQs" (10%)
+- Target 1: "Product Overview"
+- Target 2: "Feature Documentation"
+- Target 3: "API Reference"
+- Target 4: "Troubleshooting"
+- Target 5: "FAQs"
 
 **Result:** Customer support chatbot with instant, zero-latency documentation access.
 
 ### Bake Company Policies
 Eliminate policy manual lookups:
-- Target 1: "HR Policies" (35%)
-- Target 2: "Code of Conduct" (25%)
-- Target 3: "Benefits Information" (20%)
-- Target 4: "Onboarding Procedures" (20%)
+- Target 1: "HR Policies"
+- Target 2: "Code of Conduct"
+- Target 3: "Benefits Information"
+- Target 4: "Onboarding Procedures"
 
-**Result:** HR assistant that knows all policies without searching documents.
+**Result:** HR assistant that knows all corporate policies.
 
 ### Bake Educational Content
 Create subject-matter expert models:
-- Target 1: "Biology Chapter 1: Cells" (20%)
-- Target 2: "Biology Chapter 2: Genetics" (20%)
-- Target 3: "Biology Chapter 3: Evolution" (20%)
-- Target 4: "Biology Chapter 4: Ecosystems" (20%)
-- Target 5: "Biology Chapter 5: Anatomy" (20%)
+- Target 1: "Biology Chapter 1: Cells"
+- Target 2: "Biology Chapter 2: Genetics"
+- Target 3: "Biology Chapter 3: Evolution"
+- Target 4: "Biology Chapter 4: Ecosystems"
+- Target 5: "Biology Chapter 5: Anatomy"
 
 **Result:** Tutoring model with textbook knowledge baked in.
 
 ### Bake Legal Knowledge Base
 Build specialized legal assistants:
-- Target 1: "Contract Law Basics" (40%)
-- Target 2: "Intellectual Property Guide" (30%)
-- Target 3: "Employment Law" (30%)
+- Target 1: "Contract Law Basics"
+- Target 2: "Intellectual Property Guide"
+- Target 3: "Employment Law"
 
 **Result:** Legal research assistant without needing legal database queries.
 

@@ -9,22 +9,38 @@ The Bread SDK provides a comprehensive error hierarchy for handling different fa
 
 ## Error Hierarchy
 
-```
-BreadError (base)
-└── APIError
-    ├── APIConnectionError
-    │   └── APITimeoutError
-    ├── APIResponseValidationError
-    └── APIStatusError
-        ├── BadRequestError (400)
-        ├── AuthenticationError (401)
-        ├── PermissionDeniedError (403)
-        ├── NotFoundError (404)
-        ├── ConflictError (409)
-        ├── UnprocessableEntityError (422)
-        ├── RateLimitError (429)
-        └── InternalServerError (≥500)
-```
+All Bread SDK errors inherit from `BreadError`:
+
+<AccordionGroup>
+  <Accordion title="APIConnectionError - Network Issues" icon="wifi-slash">
+    Connection failures, timeouts, network errors.
+    
+    **Subclasses:**
+    - `APITimeoutError` - Request exceeded timeout threshold
+    
+    **Common causes:** Network connectivity, firewall, VPN issues
+  </Accordion>
+  
+  <Accordion title="APIStatusError - HTTP Status Errors" icon="triangle-exclamation">
+    HTTP error responses from the API (4xx, 5xx status codes).
+    
+    **Subclasses:**
+    - `BadRequestError` (400) - Invalid request parameters
+    - `AuthenticationError` (401) - Invalid or missing API key
+    - `PermissionDeniedError` (403) - Insufficient permissions
+    - `NotFoundError` (404) - Resource doesn't exist
+    - `ConflictError` (409) - Resource conflict (e.g., immutable field change)
+    - `UnprocessableEntityError` (422) - Validation error
+    - `RateLimitError` (429) - Too many requests
+    - `InternalServerError` (≥500) - Server-side error
+  </Accordion>
+  
+  <Accordion title="APIResponseValidationError - Invalid Response" icon="circle-xmark">
+    API returned data that doesn't match expected schema.
+    
+    **Common causes:** API version mismatch, malformed response
+  </Accordion>
+</AccordionGroup>
 
 ## Error Status Codes
 
@@ -44,7 +60,7 @@ BreadError (base)
   <Card title="409 - ConflictError" icon="triangle-exclamation">
     Resource conflict (e.g., immutable field change)
   </Card>
-  <Card title="422 - UnprocessableEntityError" icon="file-circle-xmark">
+  <Card title="422 - UnprocessableEntityError" icon="circle-xmark">
     Invalid entity
   </Card>
   <Card title="429 - RateLimitError" icon="gauge-high">

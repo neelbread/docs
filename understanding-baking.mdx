@@ -181,7 +181,7 @@ Baking consists of four phases that convert prompts into model weights:
     The bake phase trains the model on GPUs and specifies the final dataset composition.
     
     **Purpose**: Update model weights using the composed dataset to match the prompted model's distribution.
-
+    
     First, you choose the concentration of different prompts in the final dataset. As defined, each prompt is related to a target (which composes stim and rollout for a given prompt). For example, you might have our original Apple prompt example and more:
     - **Target 1:** "You are an expert customer service agent for Apple..."
     - **Target 2:** "Here is a guide on what to do when a user asks about Airpods support..."

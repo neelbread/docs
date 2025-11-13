@@ -62,7 +62,7 @@ def wait_for_job(
     Raises:
         TimeoutError: If job exceeds timeout
     """
-    print(f"⏳ Waiting for {job_name}...")
+    print(f"Waiting for {job_name}...")
     start_time = time.time()
     
     while True:
@@ -75,7 +75,7 @@ def wait_for_job(
         
         # Check completion
         if status.status == "complete":
-            print(f"✓ {job_name} complete ({status.lines} lines)")
+            print(f"{job_name} complete ({status.lines} lines)")
             return status
         
         # Check failure
@@ -149,7 +149,7 @@ def safe_bake_workflow(repo_name: str, target_name: str):
                 timeout=3600
             )
         except TimeoutError as e:
-            print(f"⚠️  Stim timed out: {e}")
+            print(f"Stim timed out: {e}")
             raise
         
         # Run rollout with error handling
@@ -161,31 +161,31 @@ def safe_bake_workflow(repo_name: str, target_name: str):
                 timeout=7200
             )
         except TimeoutError as e:
-            print(f"⚠️  Rollout timed out: {e}")
+            print(f"Rollout timed out: {e}")
             raise
         
-        print("✓ Workflow completed successfully")
+        print("Workflow completed successfully")
         
     except aibread.AuthenticationError:
-        print("❌ Authentication failed - check BREAD_API_KEY")
+        print("Authentication failed - check BREAD_API_KEY")
         raise
     
     except aibread.APIConnectionError as e:
-        print(f"❌ Connection failed: {e}")
+        print(f"Connection failed: {e}")
         print("Check your internet connection and API endpoint")
         raise
     
     except aibread.RateLimitError as e:
-        print(f"⚠️  Rate limited: {e}")
+        print(f"Rate limited: {e}")
         print("Wait before retrying")
         raise
     
     except aibread.APIStatusError as e:
-        print(f"❌ API error {e.status_code}: {e.response}")
+        print(f"API error {e.status_code}: {e.response}")
         raise
     
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
         raise
 
 
@@ -225,7 +225,7 @@ def retry_on_failure(max_attempts=3, backoff_factor=2):
                         raise
                     
                     wait_time = backoff_factor ** attempt
-                    print(f"⚠️  Connection error, retrying in {wait_time}s... (attempt {attempt + 1}/{max_attempts})")
+                    print(f"Connection error, retrying in {wait_time}s... (attempt {attempt + 1}/{max_attempts})")
                     time.sleep(wait_time)
                 
                 except aibread.RateLimitError as e:
@@ -234,7 +234,7 @@ def retry_on_failure(max_attempts=3, backoff_factor=2):
                     
                     # Rate limit errors often include retry-after
                     wait_time = getattr(e, 'retry_after', backoff_factor ** attempt)
-                    print(f"⚠️  Rate limited, retrying in {wait_time}s...")
+                    print(f"Rate limited, retrying in {wait_time}s...")
                     time.sleep(wait_time)
             
             return None
@@ -353,7 +353,7 @@ async def async_wait_for_job(
     timeout: int = 3600
 ):
     """Async version of wait_for_job."""
-    print(f"⏳ Waiting for {job_name}...")
+    print(f"Waiting for {job_name}...")
     start_time = asyncio.get_event_loop().time()
     
     while True:
@@ -365,7 +365,7 @@ async def async_wait_for_job(
         status = await get_status_coro()
         
         if status.status == "complete":
-            print(f"✓ {job_name} complete")
+            print(f"{job_name} complete")
             return status
         
         if status.status == "failed":
@@ -397,7 +397,7 @@ async def async_target_workflow(
             poll_interval=10
         )
         
-        print(f"✓ Workflow complete: {target_name}")
+        print(f"Workflow complete: {target_name}")
 
 
 # Run multiple workflows in parallel
@@ -552,7 +552,7 @@ def production_workflow(
             timeout=14400  # 4 hours
         )
         
-        logger.info(f"✓ Production workflow completed: {bake_name}")
+        logger.info(f"Production workflow completed: {bake_name}")
         return True
         
     except aibread.AuthenticationError:

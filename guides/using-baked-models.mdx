@@ -1,0 +1,210 @@
+---
+title: "Using Your Baked Model"
+description: "Load, chat with, and integrate your baked models in applications"
+---
+
+After your bake completes, your model contains the baked behavior in its weights. This guide shows how to use your baked model for inference, chat, and application integration.
+
+<Note>
+Completed [your first bake](/guides/single-prompt-bake)? Your trained model is ready to use.
+</Note>
+
+## Model Path Format
+
+Baked models are referenced using this path format:
+
+```
+[username]/[repo_name]/[bake_name]/[checkpoint_number]
+```
+
+**Example:**
+```
+johndoe/my_repo/my_bake_v1/35
+```
+
+**Components:**
+- `username` - Your Bread username or team name
+- `repo_name` - The repository containing the bake
+- `bake_name` - The specific bake configuration
+- `checkpoint_number` - Training checkpoint (usually final checkpoint)
+
+<Info>
+Find your checkpoint number in the bake output or training logs. The final checkpoint represents the fully trained model.
+</Info>
+
+---
+
+---
+
+## Using Baked Models for Inference
+
+### API-Based Inference
+
+Use your baked model through the Bread API with OpenAI-compatible endpoints:
+
+```python
+import os
+import requests
+
+response = requests.post(
+    "http://bapi.bread.com.ai/v1/chat/completions",
+    headers={"Authorization": f"Bearer {os.environ.get('BREAD_API_KEY')}"},
+    json={
+        "model": "johndoe/yoda_repo/yoda_bake_v1/35",
+        "messages": [{"role": "user", "content": "How do I master the Force?"}],
+        "max_tokens": 1000
+    }
+)
+
+print(response.json())
+```
+
+<Info>
+**Key requirements:**
+- `BREAD_API_KEY` environment variable must be set
+- Update `MODEL_NAME` to your baked model path: `username/repo/bake/checkpoint`
+- Base URL: `http://bapi.bread.com.ai/v1/chat/completions`
+</Info>
+
+### Streaming Responses
+
+Enable streaming for real-time response generation:
+
+```python
+import os
+import requests
+import json
+
+response = requests.post(
+    "http://bapi.bread.com.ai/v1/chat/completions",
+    headers={"Authorization": f"Bearer {os.environ.get('BREAD_API_KEY')}"},
+    json={
+        "model": "johndoe/yoda_repo/yoda_bake_v1/35",
+        "messages": [{"role": "user", "content": "I want to use the Force"}],
+        "stream": True
+    },
+    stream=True
+)
+
+for line in response.iter_lines():
+    if line and line.startswith(b"data: "):
+        data = line.decode().removeprefix("data: ")
+        if data != "[DONE]":
+            chunk = json.loads(data)
+            content = chunk["choices"][0]["delta"].get("content")
+            if content:
+                print(content, end="", flush=True)
+```
+
+---
+
+## Configuration Requirements
+
+### Essential Settings
+
+To use your baked model, you need three things:
+
+<CardGroup cols={3}>
+  <Card title="Your API Key" icon="key">
+  </Card>
+  <Card title="Our Base URL" icon="globe">
+  </Card>
+  <Card title="Your Model Path" icon="route">
+  </Card>
+</CardGroup>
+
+**Example configuration:**
+```python
+BREAD_API_KEY = os.environ.get("BREAD_API_KEY")
+BASE_URL = "http://bapi.bread.com.ai/v1/chat/completions"
+MODEL_NAME = "johndoe/yoda_repo/yoda_bake_v1/35"
+```
+
+<Warning>
+Always read `BREAD_API_KEY` from environment variables. Never hardcode API keys in your code.
+</Warning>
+
+---
+
+## Common Issues
+
+### Model not found
+
+**Problem:** Model path is incorrect or checkpoint doesn't exist.
+
+**Solution:** 
+```python
+# Verify bake completed successfully
+status = client.bakes.get(bake_name="your_bake_name", repo_name="your_repo_name")
+print(f"Status: {status.status}")  # Should be "complete"
+```
+
+### Model doesn't exhibit baked behavior
+
+**Problem:** Student prompt wasn't empty or bake didn't complete.
+
+**Solution:**
+- Check training completed: `status.status == "complete"`
+- Review training logs for convergence (a good loss is ~4e-7)
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Test Before Production" icon="vial">
+    Always test your baked model thoroughly before deploying to production. Verify it exhibits the expected behavior consistently.
+  </Accordion>
+
+  <Accordion title="Version Your Models" icon="code-branch">
+    Use clear naming: `model_v1`, `model_v2`, etc. Track which version is deployed where.
+  </Accordion>
+
+  <Accordion title="Monitor Behavior" icon="chart-line">
+    Log model outputs in production to ensure baked behavior remains consistent over time.
+  </Accordion>
+
+  <Accordion title="Keep Training Data" icon="database">
+    Save stim and rollout outputs. Useful for debugging and iterative improvements.
+  </Accordion>
+
+  <Accordion title="Document Your Prompts" icon="file-lines">
+    Keep records of teacher/student prompts used for each model version. Essential for reproducibility.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Iterative Baking"
+    icon="rotate"
+    href="/guides/iterative-baking"
+  >
+    Refine your baked model with additional training
+  </Card>
+  <Card
+    title="Multi-Target Baking"
+    icon="layer-group"
+    href="/guides/multi-target-baking"
+  >
+    Bake multiple behaviors into one model
+  </Card>
+  <Card
+    title="Production Patterns"
+    icon="shield"
+    href="/guides/production-patterns"
+  >
+    Add monitoring and error handling
+  </Card>
+  <Card
+    title="Bake Configuration"
+    icon="gear"
+    href="/configuration/bake-config"
+  >
+    Customize training hyperparameters
+  </Card>
+</CardGroup>
+
